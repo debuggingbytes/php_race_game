@@ -245,8 +245,6 @@ class Race
   public function pitStop()
   {
 
-
-
     $cars = array_column($this->cars, 'elements');
     array_multisort($cars, SORT_DESC, $this->cars);
 
@@ -267,7 +265,6 @@ class Race
     $this->fifthPlaceCar = $this->cars[4]['model'];
 
 
-
     //Push to our RoundResult Class
     $carPositions = [
       '1st ' . $this->firstPlaceCar => $this->firstPlace,
@@ -281,10 +278,6 @@ class Race
     // Clear values
     unset($carPositions);
 
-
-
-
-
     // Set max rounds so script doesn't break (verified via testing) one car always passes 2000 elements
     if ($this->round < 103) {
 
@@ -293,7 +286,7 @@ class Race
         // Has a car hit 2000 elements?
         for ($i = 0; $i < $this->totalCars; $i++) {
 
-          if ($this->cars[$i]['elements'] >= 2000 && $this->cars[$i]['elements'] > $this->previousCar) {
+          if ($this->cars[$i]['elements'] > 1999 && $this->cars[$i]['elements'] > $this->previousCar) {
             $this->previousCar = $this->cars[$i]['elements'];
             if ($this->previousCar > $this->raceWinner) {
               $this->raceWinner = $this->previousCar;
@@ -320,7 +313,7 @@ class Race
         // Has a car hit 2000 elements?
         for ($i = 0; $i < $this->totalCars; $i++) {
 
-          if ($this->cars[$i]['elements'] >= 2000 && $this->cars[$i]['elements'] > $this->previousCar) {
+          if ($this->cars[$i]['elements'] > 1999 && $this->cars[$i]['elements'] > $this->previousCar) {
             $this->previousCar = $this->cars[$i]['elements'];
             if ($this->previousCar > $this->raceWinner) {
               $this->raceWinner = $this->previousCar;
