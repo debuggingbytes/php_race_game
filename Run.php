@@ -5,10 +5,6 @@ include('Race.php');
 // run a race and print the results
 $test = new Race;
 $test->startRace();
-print "<h1>CARS</h1>";
-print "<pre>";
-print_r($test->cars);
-print "</pre>";
 
 
 $results = $test->runRace();

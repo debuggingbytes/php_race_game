@@ -19,18 +19,17 @@ class Race
 
   // Round Stuff
   public $round;
-  public $roundResult = [];
   public $totalCurved = 0;
   public $totalStraight = 0;
 
   public $elementsMax = 40;
   public $elementsLow = 36;
 
-  public $firstPlace = 0;
-  public $secondPlace = 0;
-  public $thirdPlace = 0;
-  public $fourthPlace = 0;
-  public $fifthPlace = 0;
+  public $firstPlace;
+  public $secondPlace;
+  public $thirdPlace;
+  public $fourthPlace;
+  public $fifthPlace;
 
   public $firstPlaceCar = "";
   public $secondPlaceCar = "";
@@ -75,7 +74,7 @@ class Race
   // Create Random Cars
   public function randomCar()
   {
-    $i = rand(0, 14);
+
     $makes = [
       'Subaru WRX STI',
       'Nissan R34 GTR',
@@ -93,7 +92,7 @@ class Race
       'Porsche 911 GT2',
       'Hennessey Venom GT',
     ];
-    return $makes[$i];
+    return $makes[array_rand($makes)];
   }
 
 
@@ -204,16 +203,18 @@ class Race
       // Find out if any elements are close to 40
       for ($i = 0; $i < $this->totalCars; $i++) {
         // is there an element near 40?
-        if ($this->cars[$i]['elements'] >= ($this->elementsLow * ($this->round + 1)) && $this->cars[$i]['elements'] >= ($this->elementsMax * ($this->round + 1)) && $this->nextTrack) {
+        if ($this->cars[$i]['elements'] >= ($this->elementsLow * ($this->round + 1)) && $this->cars[$i]['elements'] <= ($this->elementsMax * ($this->round + 1)) && $this->nextTrack) {
           //assign new value of element max
           $this->cars[$i]['elements'] = ($this->elementsMax * ($this->round + 1));
         } else {
           //assign element + curve value
-          $this->cars[$i]['elements'] += $this->cars[$i]['curve'];
+          $this->cars[$i]['elements'] = $this->cars[$i]['elements'] + $this->cars[$i]['curve'];
         }
       } // For Loop
 
     } else {
+
+      // TRACK WAS STRAIGHT
 
       // Find out if any elements are close to 40 on straight tracks
       for ($i = 0; $i < $this->totalCars; $i++) {
@@ -224,95 +225,46 @@ class Race
           $this->cars[$i]['elements'] = ($this->elementsMax * ($this->round + 1));
         } else {
           //assign element + straight value
-          $this->cars[$i]['elements'] += $this->cars[$i]['straight'];
+          $this->cars[$i]['elements'] = $this->cars[$i]['elements'] + $this->cars[$i]['straight'];
         } // For Loop
       }
     }
-
-
 
 
     return $this->pitStop();
   }
 
 
+  public function changeTires($val)
+  {
+    return max($val);
+  }
   //! CARS PITSTOP
 
   // validate variables
   public function pitStop()
   {
 
-    //Which car has which position?
-    // echo "<h4>" . $this->round . "</h4>";
-    for ($i = 0; $i < $this->totalCars; $i++) {
 
-      //Can this car be in first place?
-      if ($this->cars[$i]['elements'] >= $this->firstPlace) {
 
-        if ($this->cars[$i]['elements'] == $this->firstPlace) {
-          // There was a tie
-          $name = $this->cars[$i]['model'];
-          $this->firstPlace = $this->cars[$i]['elements'];
-          $this->firstPlaceCar = $name . " <b> & </b> " . $this->cars[$i]['model'];
-        } else {
-          // No Tie
-          $this->firstPlace = $this->cars[$i]['elements'];
-          $this->firstPlaceCar = $this->cars[$i]['model'];
-        }
+    $cars = array_column($this->cars, 'elements');
+    array_multisort($cars, SORT_DESC, $this->cars);
 
-        // Can this car be in second place?
-      } elseif ($this->cars[$i]['elements'] >= $this->secondPlace && $this->cars[$i]['elements'] < $this->firstPlace) {
 
-        if ($this->cars[$i]['elements'] == $this->secondPlace) {
-          // There was a tie
-          $name = $this->cars[$i]['model'];
-          $this->secondPlace = $this->cars[$i]['elements'];
-          $this->secondPlaceCar = $name . " <b> & </b> " . $this->cars[$i]['model'];
-        } else {
-          // No Tie
-          $this->secondPlace = $this->cars[$i]['elements'];
-          $this->secondPlaceCar = $this->cars[$i]['model'];
-        }
-        //Can this car be in third place?
-      } elseif ($this->cars[$i]['elements'] >= $this->thirdPlace  && $this->cars[$i]['elements'] < $this->secondPlace) {
+    $this->firstPlace = $this->cars[0]['elements'];
+    $this->firstPlaceCar = $this->cars[0]['model'];
 
-        if ($this->cars[$i]['elements'] == $this->thirdPlace) {
-          // There was a tie
-          $name = $this->cars[$i]['model'];
-          $this->thirdPlace = $this->cars[$i]['elements'];
-          $this->thirdPlaceCar = $name . " <b> & </b> " . $this->cars[$i]['model'];
-        } else {
-          // No Tie
-          $this->thirdPlace = $this->cars[$i]['elements'];
-          $this->thirdPlaceCar = $this->cars[$i]['model'];
-        }
-      } elseif ($this->cars[$i]['elements'] >= $this->fourthPlace  && $this->cars[$i]['elements'] < $this->thirdPlace) {
+    $this->secondPlace = $this->cars[1]['elements'];
+    $this->secondPlaceCar = $this->cars[1]['model'];
 
-        if ($this->cars[$i]['elements'] == $this->fourthPlace) {
-          // There was a tie
-          $name = $this->cars[$i]['model'];
-          $this->fourthPlace = $this->cars[$i]['elements'];
-          $this->fourthPlaceCar = $name . " <b> & </b> " . $this->cars[$i]['model'];
-        } else {
-          // No Tie
-          $this->fourthPlace = $this->cars[$i]['elements'];
-          $this->fourthPlaceCar = $this->cars[$i]['model'];
-        }
-      } elseif ($this->cars[$i]['elements'] >= $this->fifthPlace  && $this->cars[$i]['elements'] < $this->fourthPlace) {
+    $this->thirdPlace = $this->cars[2]['elements'];
+    $this->thirdPlaceCar = $this->cars[2]['model'];
 
-        if ($this->cars[$i]['elements'] == $this->fifthPlace) {
-          // There was a tie
-          $name = $this->cars[$i]['model'];
-          $this->fifthPlace = $this->cars[$i]['elements'];
-          $this->fifthPlaceCar = $name . " <b> & </b> " . $this->cars[$i]['model'];
-        } else {
-          // No Tie
-          $this->fifthPlace = $this->cars[$i]['elements'];
-          $this->fifthPlaceCar = $this->cars[$i]['model'];
-        }
-      } // IF ELSE LOGIC
+    $this->fourthPlace = $this->cars[3]['elements'];
+    $this->fourthPlaceCar = $this->cars[3]['model'];
 
-    } // FOR LOOP
+    $this->fifthPlace = $this->cars[4]['elements'];
+    $this->fifthPlaceCar = $this->cars[4]['model'];
 
 
 
