@@ -10,8 +10,6 @@ class Race
   public $cars = [];
   public $totalSpeed = 22;
   public $totalCars = 5;
-  public $raceWinner = "";
-  public $previousCar = "";
   // Track Stuff
   public $lastTrack;
   public $nextTrack;
@@ -24,7 +22,9 @@ class Race
 
   public $elementsMax = 40;
   public $elementsLow = 36;
+  public $multiplier = 1;
 
+  // Nice variables for our arrays
   public $firstPlace;
   public $secondPlace;
   public $thirdPlace;
@@ -158,14 +158,14 @@ class Race
       }
     }
     //set last track and change round
-    $this->lastTrack = 'curve';
+    $this->lastTrack = 0;
     $this->totalCurved++;
     $this->round++;
 
     //Push to array
     $this->changeTires();
 
-    return $this->continueRace($this->lastTrack);
+    return $this->continueRace();
   }
 
 
@@ -190,57 +190,59 @@ class Race
       }
     }
     //set last track change rounds
-    $this->lastTrack = 'straight';
+    $this->lastTrack = 1;
     $this->totalStraight++;
     $this->round++;
 
     $this->changeTires();
 
-    return $this->continueRace($this->lastTrack);
+    return $this->continueRace();
   }
 
 
   //! CONTINUE RACE METHOD
 
-  public function continueRace($lastTrack)
+  public function continueRace()
   {
-    // what is next track
-    $this->nextTrack = rand(0, 1);
-
-    // Use last track to find where to go next
-    if ($lastTrack == 'curve') {
-
-      // Find out if any elements are close to 40
-      for ($i = 0; $i < $this->totalCars; $i++) {
-        // is there an element near 40?
-        if ($this->cars[$i]['elements'] >= ($this->elementsLow * ($this->round)) && $this->cars[$i]['elements'] <= ($this->elementsMax * ($this->round)) && !$this->nextTrack) {
-          //assign new value of element max
-          $this->cars[$i]['elements'] = ($this->elementsMax * ($this->round));
+    // Find out if any car is near the 40 elements of that track type
+    $newMultipler = false;
+    $nextTrack = rand(0, 1);
+    for ($i = 0; $i < $this->totalCars; $i++) {
+      if ($this->cars[$i]['elements'] >= ($this->elementsLow * $this->multiplier)) {
+        // A car is close to our minimum distance, What is the next tracK?
+        if ($nextTrack === $this->lastTrack) {
+          //tracks are the same
+          if ($this->lastTrack) {
+            //track is straight assign that value
+            $this->cars[$i]['elements'] += $this->cars[$i]['straight'];
+          } else {
+            // Curved track
+            $this->cars[$i]['elements'] += $this->cars[$i]['curve'];
+          }
         } else {
-          //assign element + curve value
-          $this->cars[$i]['elements'] = $this->cars[$i]['elements'] + $this->cars[$i]['curve'];
+          //Tracks are different, assign minimum value to car.
+          $this->cars[$i]['elemenets'] = ($this->elementsMax * $this->multiplier);
+          $newMultipler = true;
+        } // IF $nextTrack === $this->lastTrack
+      } else {
+
+        //Car isn't close to the minimum continue with last track
+        if ($this->lastTrack) {
+          //straight track
+          $this->cars[$i]['elements'] += $this->cars[$i]['straight'];
+        } else {
+          //curved track
+          $this->cars[$i]['elements'] += $this->cars[$i]['curve'];
         }
-      } // For Loop
-
-    } else {
-
-      // TRACK WAS STRAIGHT
-
-      // Find out if any elements are close to 40 on straight tracks
-      for ($i = 0; $i < $this->totalCars; $i++) {
-        // is there an element near 40?
-
-        if ($this->cars[$i]['elements'] >= ($this->elementsLow * ($this->round)) && $this->cars[$i]['elements'] <= ($this->elementsMax * ($this->round)) && $this->nextTrack) {
-          //assign new value of element max
-          $this->cars[$i]['elements'] = ($this->elementsMax * ($this->round));
-        } else {
-          //assign element + straight value
-          $this->cars[$i]['elements'] = $this->cars[$i]['elements'] + $this->cars[$i]['straight'];
-        } // For Loop
       }
+    } // for loop
+
+
+    if ($newMultipler) {
+      $this->multiplier++;
     }
 
-
+    //send 
     return $this->pitStop();
   }
 
@@ -278,7 +280,8 @@ class Race
       '5th ' . $this->fifthPlaceCar => $this->fifthPlace,
     ];
     $result = new RoundResult($this->round, $carPositions);
-    $result->pushRound();
+
+    // $result->pushRound();
     // Clear values
     unset($carPositions);
 
@@ -305,81 +308,37 @@ class Race
   {
 
     $result = $this->changeTires();
-
+    $checkPoint = $this->finalLap();
 
     // First check to see if any cars have
-    if ($this->finalLap()) {
+    if ($checkPoint) {
+
       // Race is over, send results
+      $result->pushRound();
       return $result->theResults();
-    } else {
+
+      exit(); // Shutdown script
+
+    } elseif (!$checkPoint) {
+      $result->pushRound();
       // No one is at 2000 elements, continue race
-
       // Have we hit 1000 elements of straight tracks?
-      if ($this->totalStraight >= 40) {
-        return $this->curvedTrack();
+      if (($this->totalStraight >= 40) || ($this->totalCurved >= 40)) {
+        if ($this->totalStraight >= 40) {
+          return $this->curvedTrack();
+        } else {
+          return $this->straightTrack();
+        }
       } else {
-        return $this->straightTrack();
-      }
-    }
+        if ($this->lastTrack) {
+          return $this->straightTrack();
+        } else {
+          return $this->curvedTrack();
+        }
+      } // 50/50 lap types
+    } else {
 
-
-
-
-
-
-
-
-
-
-
-
-    // Set max rounds so script doesn't break (verified via testing) one car always passes 2000 elements
-    // if ($this->round < 103) {
-
-    //   if ($this->nextTrack) {
-
-
-
-    //     if ($this->raceWinner == "") {
-    //       $this->nextTrack = "";
-
-    //       // Have we hit 1000 elements of straight tracks?
-    //       if ($this->totalStraight >= 40) {
-    //         return $this->curvedTrack();
-    //       } else {
-    //         return $this->straightTrack();
-    //       }
-    //     } else {
-
-    //       $result->theResults();
-    //     }
-    //   } else {
-    //     // Has a car hit 2000 elements?
-    //     foreach ($this->cars as $car) {
-    //       if ($car['elements'] > 1999) {
-    //         $this->raceWinner = $car['model'];
-    //         return $result->theResults();
-    //       }
-    //     }
-
-    //     if ($this->raceWinner == "") {
-    //       $this->nextTrack = "";
-
-    //       // Have we hit 1000 elements of straight tracks?
-    //       if ($this->totalCurved >= 40) {
-    //         return $this->straightTrack();
-    //       } else {
-    //         return $this->curvedTrack();
-    //       }
-    //     } else {
-
-    //       $result->theResults();
-    //     }
-    //   } // IF NEXT TRACK
-
-
-    // } else { // We've hit 100 rounds      
-    //   return $this->pitStop();
-    // }
-  }
+      die("Something broke?");
+    } // Final Lap 
+  } // method EOL
 }
