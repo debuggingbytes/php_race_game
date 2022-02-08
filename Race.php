@@ -18,7 +18,7 @@ class Race
 
 
   // Round Stuff
-  public $round;
+  public $round = 0;
   public $totalCurved = 0;
   public $totalStraight = 0;
 
@@ -106,6 +106,7 @@ class Race
       $car = $this->checkSpeeds($i);
       $car['name'] = 'Car [' . $i . ']';
       $car['model'] = $this->randomCar();
+      $car['elements'] = 0;
       array_push($this->cars, $car);
     }
     return $this->cars;
@@ -121,8 +122,12 @@ class Race
 
     //Generate our cars
     $this->generateCarSpeeds();
-    // random for straight or curve    true / false respectively
+    // random for straight or curve    true / false respectively  
     $track = rand(0, 1);
+
+    //Push first array values of '0'
+    $this->changeTires();
+
     if ($track) {
       // print "<h1>Straight Track</h1>";
       $this->straightTrack();
@@ -146,7 +151,7 @@ class Race
       //First check to see if the element is empty.
       if (empty($this->cars[$i]['elements'])) {
         // Assign intital value
-        $this->cars[$i]['elements'] += $this->cars[$i]['curve'];
+        $this->cars[$i]['elements'] = $this->cars[$i]['curve'];
       } else {
         // assign value + value
         $this->cars[$i]['elements'] += $this->cars[$i]['curve'];
@@ -156,6 +161,9 @@ class Race
     $this->lastTrack = 'curve';
     $this->totalCurved++;
     $this->round++;
+
+    //Push to array
+    $this->changeTires();
 
     return $this->continueRace($this->lastTrack);
   }
@@ -175,7 +183,7 @@ class Race
 
       if (empty($this->cars[$i]['elements'])) {
         // Assign intital value
-        $this->cars[$i]['elements'] += $this->cars[$i]['straight'];
+        $this->cars[$i]['elements'] = $this->cars[$i]['straight'];
       } else {
         // assign value + value
         $this->cars[$i]['elements'] += $this->cars[$i]['straight'];
@@ -185,6 +193,8 @@ class Race
     $this->lastTrack = 'straight';
     $this->totalStraight++;
     $this->round++;
+
+    $this->changeTires();
 
     return $this->continueRace($this->lastTrack);
   }
@@ -203,9 +213,9 @@ class Race
       // Find out if any elements are close to 40
       for ($i = 0; $i < $this->totalCars; $i++) {
         // is there an element near 40?
-        if ($this->cars[$i]['elements'] >= ($this->elementsLow * ($this->round + 1)) && $this->cars[$i]['elements'] <= ($this->elementsMax * ($this->round + 1)) && $this->nextTrack) {
+        if ($this->cars[$i]['elements'] >= ($this->elementsLow * ($this->round)) && $this->cars[$i]['elements'] <= ($this->elementsMax * ($this->round)) && !$this->nextTrack) {
           //assign new value of element max
-          $this->cars[$i]['elements'] = ($this->elementsMax * ($this->round + 1));
+          $this->cars[$i]['elements'] = ($this->elementsMax * ($this->round));
         } else {
           //assign element + curve value
           $this->cars[$i]['elements'] = $this->cars[$i]['elements'] + $this->cars[$i]['curve'];
@@ -220,9 +230,9 @@ class Race
       for ($i = 0; $i < $this->totalCars; $i++) {
         // is there an element near 40?
 
-        if ($this->cars[$i]['elements'] >= ($this->elementsLow * ($this->round + 1)) && $this->cars[$i]['elements'] <= ($this->elementsMax * ($this->round + 1)) && !$this->nextTrack) {
+        if ($this->cars[$i]['elements'] >= ($this->elementsLow * ($this->round)) && $this->cars[$i]['elements'] <= ($this->elementsMax * ($this->round)) && $this->nextTrack) {
           //assign new value of element max
-          $this->cars[$i]['elements'] = ($this->elementsMax * ($this->round + 1));
+          $this->cars[$i]['elements'] = ($this->elementsMax * ($this->round));
         } else {
           //assign element + straight value
           $this->cars[$i]['elements'] = $this->cars[$i]['elements'] + $this->cars[$i]['straight'];
@@ -235,14 +245,8 @@ class Race
   }
 
 
-  public function changeTires($val)
-  {
-    return max($val);
-  }
-  //! CARS PITSTOP
-
-  // validate variables
-  public function pitStop()
+  // Change Tires method will submit values to RoundResult Class
+  public function changeTires()
   {
 
     $cars = array_column($this->cars, 'elements');
@@ -278,69 +282,104 @@ class Race
     // Clear values
     unset($carPositions);
 
-    // Set max rounds so script doesn't break (verified via testing) one car always passes 2000 elements
-    if ($this->round < 103) {
+    return $result;
+  }
 
-      if ($this->nextTrack) {
-
-        // Has a car hit 2000 elements?
-        for ($i = 0; $i < $this->totalCars; $i++) {
-
-          if ($this->cars[$i]['elements'] > 1999 && $this->cars[$i]['elements'] > $this->previousCar) {
-            $this->previousCar = $this->cars[$i]['elements'];
-            if ($this->previousCar > $this->raceWinner) {
-              $this->raceWinner = $this->previousCar;
-            } elseif ($this->previousCar == $this->raceWinner) {
-              $this->raceWinner = "It's a TIE ";
-            }
-          }
-        }
-
-        if ($this->raceWinner == "") {
-          $this->nextTrack = "";
-
-          // Have we hit 1000 elements of straight tracks?
-          if ($this->totalStraight >= 40) {
-            return $this->curvedTrack();
-          } else {
-            return $this->straightTrack();
-          }
-        } else {
-
-          $result->theResults();
-        }
-      } else {
-        // Has a car hit 2000 elements?
-        for ($i = 0; $i < $this->totalCars; $i++) {
-
-          if ($this->cars[$i]['elements'] > 1999 && $this->cars[$i]['elements'] > $this->previousCar) {
-            $this->previousCar = $this->cars[$i]['elements'];
-            if ($this->previousCar > $this->raceWinner) {
-              $this->raceWinner = $this->previousCar;
-            } elseif ($this->previousCar == $this->raceWinner) {
-              $this->raceWinner = "It's a TIE ";
-            }
-          }
-        } // For Loops
-
-        if ($this->raceWinner == "") {
-          $this->nextTrack = "";
-
-          // Have we hit 1000 elements of straight tracks?
-          if ($this->totalCurved >= 40) {
-            return $this->straightTrack();
-          } else {
-            return $this->curvedTrack();
-          }
-        } else {
-
-          $result->theResults();
-        }
-      } // IF NEXT TRACK
-
-
-    } else { // We've hit 100 rounds      
-      return $this->pitStop();
+  //Verify elements
+  public function finalLap()
+  {
+    $finalLap = false;
+    foreach ($this->cars as $car) {
+      if ($car['elements'] > 1999) {
+        $finalLap = true;
+      }
     }
+    return $finalLap;
+  }
+
+
+  //! CARS PITSTOP
+
+  // validate variables
+  public function pitStop()
+  {
+
+    $result = $this->changeTires();
+
+
+    // First check to see if any cars have
+    if ($this->finalLap()) {
+      // Race is over, send results
+      return $result->theResults();
+    } else {
+      // No one is at 2000 elements, continue race
+
+      // Have we hit 1000 elements of straight tracks?
+      if ($this->totalStraight >= 40) {
+        return $this->curvedTrack();
+      } else {
+        return $this->straightTrack();
+      }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    // Set max rounds so script doesn't break (verified via testing) one car always passes 2000 elements
+    // if ($this->round < 103) {
+
+    //   if ($this->nextTrack) {
+
+
+
+    //     if ($this->raceWinner == "") {
+    //       $this->nextTrack = "";
+
+    //       // Have we hit 1000 elements of straight tracks?
+    //       if ($this->totalStraight >= 40) {
+    //         return $this->curvedTrack();
+    //       } else {
+    //         return $this->straightTrack();
+    //       }
+    //     } else {
+
+    //       $result->theResults();
+    //     }
+    //   } else {
+    //     // Has a car hit 2000 elements?
+    //     foreach ($this->cars as $car) {
+    //       if ($car['elements'] > 1999) {
+    //         $this->raceWinner = $car['model'];
+    //         return $result->theResults();
+    //       }
+    //     }
+
+    //     if ($this->raceWinner == "") {
+    //       $this->nextTrack = "";
+
+    //       // Have we hit 1000 elements of straight tracks?
+    //       if ($this->totalCurved >= 40) {
+    //         return $this->straightTrack();
+    //       } else {
+    //         return $this->curvedTrack();
+    //       }
+    //     } else {
+
+    //       $result->theResults();
+    //     }
+    //   } // IF NEXT TRACK
+
+
+    // } else { // We've hit 100 rounds      
+    //   return $this->pitStop();
+    // }
   }
 }
